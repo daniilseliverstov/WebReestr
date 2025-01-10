@@ -1,0 +1,30 @@
+[
+    {
+        "model": "orders.department",
+        "pk": 1,
+        "fields": {
+            "name": "Коммерческий отдел"
+        }
+    },
+    {
+        "model": "orders.department",
+        "pk": 2,
+        "fields": {
+            "name": "Технический отдел"
+        }
+    },
+    {
+        "model": "orders.department",
+        "pk": 3,
+        "fields": {
+            "name": "Конструкторский отдел"
+        }
+    },
+    {
+        "model": "orders.department",
+        "pk": 4,
+        "fields": {
+            "name": "Отдел снабжения"
+        }
+    }
+]
