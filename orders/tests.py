@@ -101,10 +101,67 @@ class CustomerModelTest(TestCase):
             customer = Customer(
                 name='Тестовый заказчик',
                 city='Москва',
-                code='TZ123',
+                code='TZ',
                 manager=self.other_profile
             )
             customer.full_clean()  # Вызываем валидацию
+
+    def test_customer_creation_without_manager(self):
+        """Проверяем, что нельзя создать заказчика без менеджера."""
+        with self.assertRaises(ValidationError):
+            customer = Customer(
+                name='Тестовый заказчик',
+                city='Москва',
+                code='TZ',
+                manager=None
+            )
+            customer.full_clean()  # Вызываем валидацию
+
+    def test_customer_creation(self):
+        """Проверяем создание заказчика."""
+        customer = Customer.objects.create(
+            name='Тестовый заказчик',
+            city='Москва',
+            code='TZ',
+            manager=self.commercial_profile
+        )
+
+        # Проверяем, что заказчик создан
+        self.assertEqual(customer.name, 'Тестовый заказчик')
+        self.assertEqual(customer.city, 'Москва')
+        self.assertEqual(customer.code, 'TZ')
+        self.assertEqual(customer.manager, self.commercial_profile)
+
+    def test_customer_str_representation(self):
+        """Проверяем строковое представление заказчика."""
+        customer = Customer.objects.create(
+            name='Тестовый заказчик',
+            city='Москва',
+            code='TZ',
+            manager=self.commercial_profile
+        )
+
+        # Проверяем строковое представление заказчика
+        self.assertEqual(str(customer), 'Тестовый заказчик (TZ)')
+
+    def test_customer_unique_code(self):
+        """Проверяем, что код заказчика уникален."""
+        # Создаём заказчика с уникальным кодом
+        Customer.objects.create(
+            name='Тестовый заказчик',
+            city='Москва',
+            code='TZ',
+            manager=self.commercial_profile
+        )
+
+        # Пытаемся создать заказчика с тем же кодом
+        with self.assertRaises(Exception):
+            Customer.objects.create(
+                name='Другой заказчик',
+                city='Калуга',
+                code='TZ',  # Код должен быть уникальным
+                manager=self.commercial_profile
+            )
 
     def test_customer_creation_without_manager(self):
         """Проверяем, что нельзя создать заказчика без менеджера."""
@@ -116,51 +173,6 @@ class CustomerModelTest(TestCase):
                 manager=None
             )
             customer.full_clean()  # Вызываем валидацию
-
-    def test_customer_creation(self):
-            # Создаём заказчика
-            customer = Customer.objects.create(
-                name='Тестовый заказчик',
-                city='Москва',
-                code='TZ',
-                manager='Маргарита'
-            )
-
-            # Проверяем, что заказчик создан
-            self.assertEqual(customer.name, 'Тестовый заказчик')
-            self.assertEqual(customer.city, 'Москва')
-            self.assertEqual(customer.code, 'TZ')
-            self.assertEqual(customer.manager, 'Маргарита')
-
-    def test_customer_str_representation(self):
-        # Создаём заказчика
-        customer = Customer.objects.create(
-            name='Тестовый заказчик',
-            city='Москва',
-            code='TZ',
-            manager='Маргарита'
-        )
-
-        # Проверяем строковое представление заказчика
-        self.assertEqual(str(customer), 'Тестовый заказчик (TZ)')
-
-    def test_customer_unique_code(self):
-        # Создаём заказчика с уникальным кодом
-        Customer.objects.create(
-            name='Тестовый заказчик',
-            city='Москва',
-            code='TZ',
-            manager='Маргарита'
-        )
-
-        # Пытаемся создать заказчика с тем же кодом
-        with self.assertRaises(Exception):
-            Customer.objects.create(
-                name='Другой заказчик',
-                city='Калуга',
-                code='TZ',  # Код должен быть уникальным
-                manager='Наталья'
-            )
 
 
 class OrdersModelTest(TestCase):

@@ -31,9 +31,9 @@ class Profile(models.Model):
 
 class Customer(models.Model):
     """Класс описания Заказчиков."""
-    name = models.CharField(max_length=255)
-    city = models.CharField(max_length=255)
-    code = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=255, null=True)
+    city = models.CharField(max_length=255, null=True, blank=True)
+    code = models.CharField(max_length=10, unique=True, null=True, blank=True)
     manager = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True, blank=False,
                                 limit_choices_to={'department': 'commercial'},  # Ограничение выбора
                                 verbose_name='Менеджер')
