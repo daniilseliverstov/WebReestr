@@ -49,4 +49,56 @@ class Customer(models.Model):
 
 class Orders(models.Model):
     """Класс заказов, сложно...."""
-    pass
+    STATUS_CHOICES = [
+        ('accepted', 'Принят'),
+        ('in_progress', 'В работе'),
+        ('clarification', 'Уточнение'),
+        ('documents', 'Документы'),
+        ('postponed', 'Перенос'),
+        ('completed', 'Готово'),
+    ]
+
+    # Основные поля заказа
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='orders', verbose_name='Заказчик')
+    order_number = models.CharField(max_length=50, unique=True, verbose_name='Номер заказа')
+    month = models.IntegerField(verbose_name='Месяц заказа')
+    week = models.IntegerField(verbose_name='Производственная неделя')
+    manager = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='managed_orders',
+                                verbose_name='Менеджер')
+    weight = models.FloatField(blank=True, null=True, verbose_name='Масса')
+    package_count = models.IntegerField(blank=True, null=True, verbose_name='Количество упаковок')
+    start_date = models.DateField(blank=True, null=True, verbose_name='Дата начала обработки')
+    assigned_to = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='assigned_orders', verbose_name='Исполнитель')
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='accepted', verbose_name='Статус заказа')
+
+    # Поля для материалов
+    mdf = models.BooleanField(default=False, verbose_name='МДФ')
+    fittings = models.BooleanField(default=False, verbose_name='Фурнитура')
+    glass = models.BooleanField(default=False, verbose_name='Стекла')
+    cnc = models.BooleanField(default=False, verbose_name='ЧПУ')
+    ldsp_area = models.FloatField(blank=True, null=True, verbose_name='ЛДСП 16-25мм, АГТ (м²)')
+    mdf_area = models.FloatField(blank=True, null=True, verbose_name='МДФ (м²)')
+    edge_04 = models.FloatField(blank=True, null=True, verbose_name='Кромка 0,4мм (м/п)')
+    edge_2 = models.FloatField(blank=True, null=True, verbose_name='Кромка 2мм (м/п)')
+    edge_1 = models.FloatField(blank=True, null=True, verbose_name='Кромка 1мм (м/п)')
+    total_area = models.FloatField(blank=True, null=True, verbose_name='Общая площадь (м²)')
+    serial_area = models.FloatField(blank=True, null=True, verbose_name='Площадь серийной продукции (м²)')
+    portal_area = models.FloatField(blank=True, null=True, verbose_name='Площадь каминных порталов (м²)')
+    complaint_reason = models.TextField(blank=True, null=True, verbose_name='Причина рекламации')
+
+    # Метод для отображения заказа в админке
+    def __str__(self):
+        return f"{self.order_number} ({self.get_status_display()})"
+
+    # Валидация заказа
+    def clean(self):
+        # Проверка, что менеджер из коммерческого отдела
+        if self.manager and self.manager.department != 'commercial':
+            raise ValidationError({'manager': 'Менеджер должен быть из коммерческого отдела.'})
+
+        # Проверка, что исполнитель из технического или конструкторского отдела
+        if self.assigned_to and self.assigned_to.department not in ['technical', 'design']:
+            raise ValidationError(
+                {'assigned_to': 'Исполнитель должен быть из технического или конструкторского отдела.'})
+
