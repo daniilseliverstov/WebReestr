@@ -2,49 +2,9 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
 
-
-class Department(models.Model):
-    """Класс описания Отделов. Состоит только из названия"""
-    name = models.CharField(max_length=100, unique=True)
-
-    def __str__(self):
-        return self.name
-
-
-class Profile(models.Model):
-    """Класс профилей пользователей"""
-    user: User = models.OneToOneField(User, on_delete=models.CASCADE)  # Связь с User
-    department = models.CharField(
-        max_length=100,
-        choices=[
-            ('commercial', 'Коммерческий отдел'),
-            ('technical', 'Технический отдел'),
-            ('design', 'Конструкторский отдел'),
-            ('supply', 'Отдел снабжения'),
-        ],
-        verbose_name='Отдел'
-    )
-
-    def __str__(self):
-        return f'{self.user.username} ({self.department})'
-
-
-class Customer(models.Model):
-    """Класс описания Заказчиков."""
-    name = models.CharField(max_length=255, null=True)
-    city = models.CharField(max_length=255, null=True, blank=True)
-    code = models.CharField(max_length=10, unique=True, null=True, blank=True)
-    manager = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True, blank=False,
-                                limit_choices_to={'department': 'commercial'},  # Ограничение выбора
-                                verbose_name='Менеджер')
-
-    def __str__(self):
-        return f"{self.name} ({self.code})"
-
-    def clean(self):
-        """Проверяем, что менеджер из коммерческого отдела."""
-        if self.manager and self.manager.department != 'commercial':
-            raise ValidationError({'manager': 'Менеджер должен быть из коммерческого отдела.'})
+from materials.models import Materials
+from users.models import Profile
+from customers.models import Customer
 
 
 class Orders(models.Model):
@@ -72,21 +32,6 @@ class Orders(models.Model):
                                     related_name='assigned_orders', verbose_name='Исполнитель')
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='accepted', verbose_name='Статус заказа')
 
-    # Поля для материалов
-    mdf = models.BooleanField(default=False, verbose_name='МДФ')
-    fittings = models.BooleanField(default=False, verbose_name='Фурнитура')
-    glass = models.BooleanField(default=False, verbose_name='Стекла')
-    cnc = models.BooleanField(default=False, verbose_name='ЧПУ')
-    ldsp_area = models.FloatField(blank=True, null=True, verbose_name='ЛДСП 16-25мм, АГТ (м²)')
-    mdf_area = models.FloatField(blank=True, null=True, verbose_name='МДФ (м²)')
-    edge_04 = models.FloatField(blank=True, null=True, verbose_name='Кромка 0,4мм (м/п)')
-    edge_2 = models.FloatField(blank=True, null=True, verbose_name='Кромка 2мм (м/п)')
-    edge_1 = models.FloatField(blank=True, null=True, verbose_name='Кромка 1мм (м/п)')
-    total_area = models.FloatField(blank=True, null=True, verbose_name='Общая площадь (м²)')
-    serial_area = models.FloatField(blank=True, null=True, verbose_name='Площадь серийной продукции (м²)')
-    portal_area = models.FloatField(blank=True, null=True, verbose_name='Площадь каминных порталов (м²)')
-    complaint_reason = models.TextField(blank=True, null=True, verbose_name='Причина рекламации')
-
     # Метод для отображения заказа в админке
     def __str__(self):
         return f"{self.order_number} ({self.get_status_display()})"
@@ -102,3 +47,18 @@ class Orders(models.Model):
             raise ValidationError(
                 {'assigned_to': 'Исполнитель должен быть из технического или конструкторского отдела.'})
 
+    def get_status_display(self):
+        """Надо сделать!"""
+        pass
+
+
+class AdditionalOrder(models.Model):
+    TYPE_CHOICES = [
+        ('supplement', 'ДОП'),
+        ('complete', 'ДОД'),
+        ('Claim', 'РЕК')
+    ]
+    parent_order = models.ForeignKey(Orders, on_delete=models.CASCADE)
+    type_ = models.CharField(max_length=50, choices=TYPE_CHOICES, default='Claim', verbose_name='Статус заказа')
+    materials = models.OneToOneField(Materials, on_delete=models.CASCADE)
+    complaint_reason = models.TextField(blank=True, null=True, verbose_name='Причина рекламации')
