@@ -1,23 +1,37 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.contrib.auth import get_user_model
 
-from users.models import Profile
+User = get_user_model()
 
 
 class Customer(models.Model):
-    """Класс описания Заказчиков."""
-    name = models.CharField(max_length=255, null=True)
-    city = models.CharField(max_length=255, null=True, blank=True)
-    code = models.CharField(max_length=10, unique=True, null=True, blank=True)
-    manager = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True, blank=False,
-                                limit_choices_to={'department': 'commercial'},  # Ограничение выбора
+    """
+    Модель для представления заказчиков.
+
+    Атрибуты:
+        name (CharField): Название заказчика.
+                          Может быть пустым.
+        city (CharField): Город заказчика.
+                          Может быть пустым.
+        code (CharField): Уникальный код заказчика.
+                         Обязательно уникальное значение.
+                         Может быть пустым.
+        manager (ForeignKey): Связь с моделью CustomUser.
+                            Означает, что у каждого заказчика есть менеджер.
+                            Поле не может быть пустым.
+                            Менеджер должен быть из коммерческого отдела.
+    """
+    name = models.CharField(max_length=255, verbose_name='Название', null=True, blank=True)
+    city = models.CharField(max_length=255, verbose_name='Город', null=True, blank=True)
+    code = models.CharField(max_length=10, unique=True, verbose_name='Код', null=True, blank=True)
+    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False,
+                                limit_choices_to={'department__name': 'коммерческий'},  # Ограничение выбора
                                 verbose_name='Менеджер')
 
     def __str__(self):
+        """
+        Возвращает строковое представление объекта заказчика.
+        Используется для отображения в админке.
+        """
         return f"{self.name} ({self.code})"
-
-    def clean(self):
-        """Проверяем, что менеджер из коммерческого отдела."""
-        if self.manager and self.manager.department != 'commercial':
-            raise ValidationError({'manager': 'Менеджер должен быть из коммерческого отдела.'})
-
