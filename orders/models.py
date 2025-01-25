@@ -20,11 +20,11 @@ class Order(models.Model):
     ]
 
     ORDER_TYPES = [
-        ('Н', 'Нестандартные заказы'),
-        ('К', 'Нестандартные заказы кухни'),
-        ('ЛК', 'Стандартный заказ на кухни'),
-        ('ЭШ', 'Стандартный заказ на шкафы'),
-        ('П', 'Порталы')
+        ('Н', '(Н)Нестандартные заказы'),
+        ('К', '(К)Нестандартные заказы кухни'),
+        ('ЛК', '(ЛК)Стандартный заказ на кухни'),
+        ('ЭШ', '(ЭШ)Стандартный заказ на шкафы'),
+        ('П', '(П)Порталы')
     ]
 
     SUB_ORDER_TYPES = [
@@ -45,7 +45,6 @@ class Order(models.Model):
     order_type = models.CharField(max_length=3, choices=ORDER_TYPES, null=True, blank=True, verbose_name='Тип заказа')
     sub_order_type = models.CharField(max_length=3, choices=SUB_ORDER_TYPES, null=True, blank=True,
                                       verbose_name='Тип доп. заказа')
-    part = models.IntegerField(null=True, blank=True, verbose_name='Часть заказа')
     weight = models.FloatField(blank=True, null=True, verbose_name='Масса')
     package_count = models.IntegerField(blank=True, null=True, verbose_name='Количество упаковок')
     start_date = models.DateField(blank=True, null=True, verbose_name='Дата начала обработки')
@@ -67,6 +66,7 @@ class Order(models.Model):
     serial_area = models.FloatField(null=True, blank=True, verbose_name='Площадь серийной продукции')
     portal_area = models.FloatField(null=True, blank=True, verbose_name='Площадь каминных порталов')
     reclamation_reason = models.TextField(blank=True, null=True, verbose_name='Причина рекламации')
+    part = models.IntegerField(null=True, blank=True, verbose_name='Часть заказа')
 
     # Метод для отображения заказа в админке
     def __str__(self):
@@ -101,7 +101,7 @@ class Order(models.Model):
             order_number_part = 0
             if last_order:
                 order_number_part = int(last_order.order_number.split('-')[-1].split('-')[0][:-1]) + 1 if \
-                    last_order.order_number.split('-')[-1].split('-')[0][-1].isdigit() else int(
+                last_order.order_number.split('-')[-1].split('-')[0][-1].isdigit() else int(
                     last_order.order_number.split('-')[-1][:-1]) + 1
             else:
                 order_number_part = 1
