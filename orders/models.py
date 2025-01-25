@@ -2,45 +2,14 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from users.models import CustomUser
 from customers.models import Customer
+from datetime import datetime
 
 
 class Order(models.Model):
     """
     Модель для представления заказов.
-
-    Атрибуты:
-        STATUS_CHOICES (list): Список возможных статусов заказа.
-        ORDER_TYPES (list): Список возможных типов заказов.
-        SUB_ORDER_TYPES (list): Список возможных типов дополнительных заказов.
-        customer (ForeignKey): Связь с моделью Customer.
-        order_number (CharField): Уникальный номер заказа.
-        month (IntegerField): Месяц заказа.
-        week (IntegerField): Производственная неделя.
-        manager (ForeignKey): Связь с моделью CustomUser (менеджер).
-                            Менеджер должен быть из коммерческого отдела.
-        parent_order (ForeignKey): Ссылка на родительский заказ (для доп. заказов).
-        order_type (CharField): Тип заказа (из ORDER_TYPES).
-        sub_order_type (CharField): Тип дополнительного заказа (из SUB_ORDER_TYPES).
-        weight (FloatField): Масса заказа.
-        package_count (IntegerField): Количество упаковок.
-        start_date (DateField): Дата начала обработки.
-        technologist (ForeignKey): Связь с моделью CustomUser (технолог).
-                                   Технолог должен быть из конструкторского отдела.
-        status (CharField): Статус заказа (из STATUS_CHOICES).
-        has_mdf (BooleanField): Признак наличия МДФ.
-        has_fittings (BooleanField): Признак наличия фурнитуры.
-        has_glass (BooleanField): Признак наличия стекла.
-        has_cnc (BooleanField): Признак наличия ЧПУ.
-        ldsp_agt_area (FloatField): Площадь ЛДСП 16-25мм, АГТ.
-        mdf_area (FloatField): Площадь МДФ.
-        edge_04_length (FloatField): Длина кромки 0,4мм.
-        edge_2_length (FloatField): Длина кромки 2мм.
-        edge_1_length (FloatField): Длина кромки 1мм.
-        total_area (FloatField): Общая площадь.
-        serial_area (FloatField): Площадь серийной продукции.
-        portal_area (FloatField): Площадь каминных порталов.
-        reclamation_reason (TextField): Причина рекламации.
     """
+
     STATUS_CHOICES = [
         ('accepted', 'Принят'),
         ('in_progress', 'В работе'),
@@ -65,17 +34,18 @@ class Order(models.Model):
     ]
     # Основные поля заказа
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='orders', verbose_name='Заказчик')
-    order_number = models.CharField(max_length=50, unique=True, verbose_name='Номер заказа')
+    order_number = models.CharField(max_length=50, unique=True, verbose_name='Номер заказа', blank=True)
     month = models.IntegerField(verbose_name='Месяц заказа')
     week = models.IntegerField(verbose_name='Производственная неделя')
     manager = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='managed_orders',
                                 limit_choices_to={'department__name': 'коммерческий'},
                                 verbose_name='Менеджер')
     parent_order = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
-                                     related_name='sub_orders')
+                                     related_name='sub_orders', verbose_name='Родительский заказ')
     order_type = models.CharField(max_length=3, choices=ORDER_TYPES, null=True, blank=True, verbose_name='Тип заказа')
     sub_order_type = models.CharField(max_length=3, choices=SUB_ORDER_TYPES, null=True, blank=True,
                                       verbose_name='Тип доп. заказа')
+    part = models.IntegerField(null=True, blank=True, verbose_name='Часть заказа')
     weight = models.FloatField(blank=True, null=True, verbose_name='Масса')
     package_count = models.IntegerField(blank=True, null=True, verbose_name='Количество упаковок')
     start_date = models.DateField(blank=True, null=True, verbose_name='Дата начала обработки')
@@ -108,15 +78,42 @@ class Order(models.Model):
 
     def clean(self):
         """
-        Проверяет, что для дополнительных заказов указан родительский заказ.
+        Проверяет, что для дополнительных заказов указан родительский заказ и что номер недели не больше 5.
         """
         if self.sub_order_type and not self.parent_order:
             raise ValidationError({'parent_order': 'Для дополнительных заказов необходимо указать родительский заказ.'})
+        if self.week and self.week > 5:
+            raise ValidationError({'week': 'Неделя не может быть больше 5'})
 
     def save(self, *args, **kwargs):
         """
-        Переопределяет метод save для проверки типа заказа.
+        Переопределяем метод save для генерации номера заказа.
         """
+        if not self.pk:  # Только для новых заказов
+            year = datetime.now().year % 100  # Берем последние две цифры года
+            client_code = self.customer.code
+            order_type = self.order_type
+
+            # Получаем порядковый номер
+            last_order = Order.objects.filter(customer=self.customer,
+                                              order_number__startswith=f'{client_code}-{year}').order_by(
+                '-order_number').first()
+            order_number_part = 0
+            if last_order:
+                order_number_part = int(last_order.order_number.split('-')[-1].split('-')[0][:-1]) + 1 if \
+                    last_order.order_number.split('-')[-1].split('-')[0][-1].isdigit() else int(
+                    last_order.order_number.split('-')[-1][:-1]) + 1
+            else:
+                order_number_part = 1
+
+            order_number_base = f"{client_code}-{year}-{order_number_part:03d}{order_type}"
+
+            if self.sub_order_type:
+                self.order_number = f"{order_number_base}-{self.sub_order_type}"
+            elif self.part:
+                self.order_number = f"{order_number_base}-{self.part}"
+            else:
+                self.order_number = order_number_base
         if not self.pk and not self.order_type:
             raise ValueError("Для основных заказов необходимо указать тип заказа.")
 

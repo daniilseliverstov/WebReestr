@@ -1,8 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
+from users.models import CustomUser
 
 
 class Customer(models.Model):
@@ -25,8 +23,7 @@ class Customer(models.Model):
     name = models.CharField(max_length=255, verbose_name='Название', null=True, blank=True)
     city = models.CharField(max_length=255, verbose_name='Город', null=True, blank=True)
     code = models.CharField(max_length=10, unique=True, verbose_name='Код', null=True, blank=True)
-    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False,
-                                limit_choices_to={'department__name': 'коммерческий'},  # Ограничение выбора
+    manager = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=False,
                                 verbose_name='Менеджер')
 
     def __str__(self):
@@ -35,3 +32,8 @@ class Customer(models.Model):
         Используется для отображения в админке.
         """
         return f"{self.name} ({self.code})"
+
+    def clean(self):
+        """Валидация менеджера."""
+        if self.manager and self.manager.department.name != 'коммерческий':
+            raise ValidationError({'manager': 'Менеджер должен быть из коммерческого отдела.'})

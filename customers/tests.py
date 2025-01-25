@@ -15,20 +15,23 @@ class CustomerModelTest(TestCase):
 
     def test_customer_creation(self):
         """Проверяет создание заказчика."""
-        customer = Customer.objects.create(name="ООО 'Рога и Копыта'", city="Москва", code="12345", manager=self.manager)
+        customer = Customer.objects.create(name="ООО 'Рога и Копыта'", city="Москва", code="РИК", manager=self.manager)
         self.assertEqual(customer.name, "ООО 'Рога и Копыта'")
         self.assertEqual(customer.city, "Москва")
-        self.assertEqual(customer.code, "12345")
+        self.assertEqual(customer.code, "РИК")
         self.assertEqual(customer.manager, self.manager)
-        self.assertEqual(str(customer), "ООО 'Рога и Копыта' (12345)")
+        self.assertEqual(str(customer), "ООО 'Рога и Копыта' (РИК)")
 
     def test_customer_unique_code(self):
         """Проверяет уникальность кода заказчика."""
-        Customer.objects.create(name="ООО 'Рога и Копыта'", city="Москва", code="12345", manager=self.manager)
+        Customer.objects.create(name="ООО 'Рога и Копыта'", city="Москва", code="РИК", manager=self.manager)
         with self.assertRaises(Exception):
-           Customer.objects.create(name="ООО 'Рога и Копыта'", city="Москва", code="12345", manager=self.manager)
+            Customer.objects.create(name="ООО 'Рога и Копыта'", city="Москва", code="РИК", manager=self.manager)
 
     def test_customer_manager_from_commercial(self):
         """Проверяет, что менеджер из коммерческого отдела."""
-        with self.assertRaises(Exception):
-          Customer.objects.create(name="ООО 'Другая компания'", city="Санкт-Петербург", code="67890", manager=self.non_manager)
+        customer = Customer(name="ООО 'Другая компания'", city="Санкт-Петербург", code="ДК", manager=self.non_manager)
+        with self.assertRaises(ValidationError) as context:
+            customer.full_clean()
+        self.assertIn('manager', context.exception.message_dict)
+        self.assertEqual(context.exception.message_dict['manager'][0], 'Менеджер должен быть из коммерческого отдела.')
