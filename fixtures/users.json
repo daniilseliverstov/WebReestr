@@ -4,7 +4,7 @@
         "pk": 1,
         "fields": {
             "username": "commercial_user",
-            "password": "123",
+            "password": "pbkdf2_sha256$600000$WO6vuU6JImQnuA0kipX91S$jEI2oxj+RIkV0+tdHwGbiO+X7m8x+3du/lDS57XcfE0=",
             "is_superuser": false,
             "is_staff": false,
             "is_active": true,
@@ -21,7 +21,7 @@
         "pk": 2,
         "fields": {
              "username": "technical_user",
-             "password": "123",
+             "password": "pbkdf2_sha256$600000$WO6vuU6JImQnuA0kipX91S$jEI2oxj+RIkV0+tdHwGbiO+X7m8x+3du/lDS57XcfE0=",
             "is_superuser": false,
             "is_staff": false,
             "is_active": true,
@@ -38,7 +38,7 @@
         "pk": 3,
         "fields": {
              "username": "design_user",
-            "password": "123",
+            "password": "pbkdf2_sha256$600000$WO6vuU6JImQnuA0kipX91S$jEI2oxj+RIkV0+tdHwGbiO+X7m8x+3du/lDS57XcfE0=",
             "is_superuser": false,
             "is_staff": false,
             "is_active": true,
@@ -55,7 +55,7 @@
        "pk": 4,
        "fields": {
             "username": "supply_user",
-            "password": "123",
+            "password": "pbkdf2_sha256$600000$WO6vuU6JImQnuA0kipX91S$jEI2oxj+RIkV0+tdHwGbiO+X7m8x+3du/lDS57XcfE0=",
             "is_superuser": false,
             "is_staff": false,
             "is_active": true,

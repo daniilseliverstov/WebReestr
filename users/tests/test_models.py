@@ -1,5 +1,6 @@
+from django.contrib.auth.forms import AuthenticationForm
 from django.test import TestCase
-from .models import Department, CustomUser
+from users.models import Department, CustomUser
 
 
 class DepartmentModelTest(TestCase):
@@ -29,3 +30,16 @@ class CustomUserModelTest(TestCase):
         self.assertEqual(self.user.username, "testuser")
         self.assertEqual(self.user.department, self.department)
         self.assertEqual(str(self.user), "testuser")
+
+
+class UserFormTest(TestCase):
+    def test_login_form_valid_data(self):
+        """Проверяем, что форма авторизации возвращает правильные значения"""
+        form = AuthenticationForm(data={"username": "testuser", "password": "testpassword"})
+        self.assertFalse(form.is_valid())
+        form = AuthenticationForm(data={"username": "testuser", "password": "wrongpassword"})
+
+    def test_login_form_invalid_data(self):
+        """Проверяем, что форма авторизации возвращает ошибку при не правильных данных"""
+        form = AuthenticationForm(data={"username": "testuser", "password": "wrongpassword"})
+        self.assertFalse(form.is_valid())
