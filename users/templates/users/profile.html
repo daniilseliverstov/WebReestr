@@ -1,0 +1,17 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+    <h2>Профиль пользователя</h2>
+    <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
+    <p><strong>Отдел:</strong> {{ user.department }}</p>
+
+    <h3>Заказы, которые вы исполняете:</h3>
+    <ul>
+    {% for order in orders %}
+       <li><a href="#">{{order}}</a></li>
+    {% empty %}
+        <li>Вы не исполняете заказы</li>
+    {% endfor %}
+    </ul>
+    <a href="{% url 'logout' %}">Выйти</a>
+{% endblock %}
